@@ -3,17 +3,20 @@
 
 #define MAXLINES 5000 /* максимальное число строк */
 #define MAXLEN 1000 /* максимальная длина строки */
+#define MAXBUFFERLEN 100000
 
 char *line_ptr[MAXLINES]; /* указатели на строки */
 
-int read_lines(char **line_ptr, int nlines);
+int read_lines(char **line_ptr, int nlines, char *buffer);
 void write_lines(char **line_ptr, int nlines);
 void qsort(char **line_ptr, int left, int right);
 
-/* сортировка строк */
+
 int main()
 {
-    int count = read_lines(line_ptr, MAXLINES);
+    char buffer[MAXBUFFERLEN];
+
+    int count = read_lines(line_ptr, MAXLINES, buffer);
     qsort(line_ptr, 0, count - 1);
     write_lines(line_ptr, count);
 
@@ -21,30 +24,30 @@ int main()
 }
 
 
-char *alloc(int);
 int get_line(char *, int);
+void copy_str(char *from, char *to);
 
-int read_lines(char **line_ptr, int max_lines)
+int read_lines(char **line_ptr, int max_lines, char *buffer)
 {
     int len = 0;
     int nlines = 0;
-    char *p;
     char line[MAXLEN];
+    char *p;
 
     nlines = 0;
 
+    int j = 0;
     while ((len = get_line(line, MAXLEN)) > 0)
     {
-        p = alloc(len);
-        if (nlines >= max_lines || p == NULL)
+        if (nlines >= max_lines)
         {
             return -1;
         }
         else 
         {
-            line[len-1] = '\0'; /* убираем символ \n */
-            strcpy(p, line);
-            line_ptr[nlines++] = p;
+            copy_str(&buffer[j], line);
+            line_ptr[nlines++] = &buffer[j];
+            j += (len + 1);
         }
     }
     return nlines;
@@ -57,9 +60,9 @@ void qsort(char **v, int left, int right)
 {
     int i, last;
 
-    if (left >= right) /* ничего не делается, если в массиве */
+    if (left >= right)
     {
-        return; /* менее двух элементов */
+        return;
     }
 
     swap(v, left, (left+ right)/2);
@@ -89,23 +92,6 @@ void write_lines(char **line_ptr, int nlines)
 }
 
 
-#define MAX_BUFF_LEN 10000
-char alloc_buff[MAX_BUFF_LEN];
-char *alloc_lasr_ptr = alloc_buff;
-
-char *alloc(int n)
-{
-    if (alloc_buff + MAX_BUFF_LEN - alloc_lasr_ptr >= n)
-    {
-        alloc_lasr_ptr += n;
-        return alloc_lasr_ptr - n;
-    }
-    else
-    {
-        return NULL;
-    }
-}
-
 int get_line(char s[], int lim)
 {
     int c, i;
@@ -113,11 +99,7 @@ int get_line(char s[], int lim)
     {
         s[i] = c;
     }
-    if (c == '\n')
-    {
-        s[i] = c;
-        ++i;
-    }
+
     s[i] = '\0';
     return i;
 }
@@ -128,4 +110,9 @@ void swap(char **v, int i, int j)
     temp = v[i];
     v[i] = v[j];
     v[j] = temp;
+}
+
+void copy_str(char *to, char *from)
+{
+    while(*to++ = *from++);
 }
